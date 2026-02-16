@@ -9,22 +9,29 @@ st.title("📊 Simulasi Sistem Piket IT Del")
 st.markdown("Simulasi proses pengisian ompreng untuk sistem piket.")
 
 # ===============================
-# KONSTANTA SESUAI KETENTUAN
+# Sidebar Parameter
 # ===============================
-JUMLAH_MAHASISWA_PIKET = 7
-TOTAL_MEJA = 60
-MAHASISWA_PER_MEJA = 3
-TOTAL_OMPRENG = TOTAL_MEJA * MAHASISWA_PER_MEJA
+st.sidebar.header("⚙️ Parameter Simulasi")
 
-# Rentang waktu sesuai narasi
-MIN_LAUK, MAX_LAUK = 30, 60
-MIN_NASI, MAX_NASI = 30, 60
-MIN_ANGKAT, MAX_ANGKAT = 20, 60
+total_mahasiswa_yang_piket = st.sidebar.number_input("Jumlah Mahasiswa yang Piket", value=7)
+total_meja = st.sidebar.number_input("Jumlah Meja", value=60)
+mahasiswa_per_meja = st.sidebar.number_input("Mahasiswa per Meja", value=3)
+
+min_lauk = st.sidebar.number_input("Min Waktu Lauk (detik)", value=30)
+max_lauk = st.sidebar.number_input("Max Waktu Lauk (detik)", value=60)
+
+min_nasi = st.sidebar.number_input("Min Waktu Nasi (detik)", value=30)
+max_nasi = st.sidebar.number_input("Max Waktu Nasi (detik)", value=60)
+
+min_angkat = st.sidebar.number_input("Min Waktu Angkat (detik)", value=20)
+max_angkat = st.sidebar.number_input("Max Waktu Angkat (detik)", value=60)
 
 # ===============================
 # SIMULASI
 # ===============================
 if st.button("🚀 Jalankan Simulasi"):
+
+    TOTAL_OMPRENG = total_meja * mahasiswa_per_meja
 
     waktu_lauk_selesai = 0
     waktu_angkat_selesai = 0
@@ -45,17 +52,17 @@ if st.button("🚀 Jalankan Simulasi"):
         # ===============================
         # PROSES LAUK
         # ===============================
-        waktu_lauk = random.uniform(MIN_LAUK, MAX_LAUK)
+        waktu_lauk = random.uniform(min_lauk, max_lauk)
         total_lauk += waktu_lauk
         waktu_lauk_selesai += waktu_lauk
 
         # ===============================
-        # PROSES ANGKAT (BATCH 4–7)
+        # PROSES ANGKAT (BATCH)
         # ===============================
         counter_batch += 1
 
         if counter_batch >= batch_size:
-            waktu_angkat = random.uniform(MIN_ANGKAT, MAX_ANGKAT)
+            waktu_angkat = random.uniform(min_angkat, max_angkat)
             total_angkat += waktu_angkat
             waktu_angkat_selesai = max(waktu_lauk_selesai, waktu_angkat_selesai) + waktu_angkat
 
@@ -67,7 +74,7 @@ if st.button("🚀 Jalankan Simulasi"):
         # ===============================
         # PROSES NASI
         # ===============================
-        waktu_nasi = random.uniform(MIN_NASI, MAX_NASI)
+        waktu_nasi = random.uniform(min_nasi, max_nasi)
         total_nasi += waktu_nasi
         waktu_nasi_selesai = max(waktu_angkat_selesai, waktu_nasi_selesai) + waktu_nasi
 
@@ -77,7 +84,7 @@ if st.button("🚀 Jalankan Simulasi"):
         })
 
     # ===============================
-    # OUTPUT
+    # OUTPUT METRIC
     # ===============================
     total_detik = waktu_nasi_selesai
     total_menit = total_detik / 60
@@ -85,25 +92,19 @@ if st.button("🚀 Jalankan Simulasi"):
 
     st.success("Simulasi Selesai!")
 
-    st.info(
-        f"""
-        👥 Mahasiswa Piket: {JUMLAH_MAHASISWA_PIKET} orang  
-        🍱 Total Ompreng: {TOTAL_OMPRENG} ompreng  
-        🏫 Total Meja: {TOTAL_MEJA} meja  
-        🕖 Mulai: 07.00 WIB
-        """
-    )
-
     col1, col2, col3 = st.columns(3)
 
-    col1.metric("Total Waktu (menit)", f"{total_menit:.2f}")
-    col2.metric("Estimasi Selesai", f"{jam_selesai:.2f} WIB")
-    col3.metric("Rata-rata per Ompreng", f"{total_detik/TOTAL_OMPRENG:.2f} detik")
+    col1.metric("Total Ompreng", TOTAL_OMPRENG)
+    col2.metric("Total Waktu (menit)", f"{total_menit:.2f}")
+    col3.metric("Estimasi Selesai", f"{jam_selesai:.2f} WIB")
 
+    # ===============================
+    # DATAFRAME
+    # ===============================
     df = pd.DataFrame(data)
 
     # ===============================
-    # LINE CHART
+    # LINE CHART (PROGRES)
     # ===============================
     st.subheader("📈 Grafik Progres Penyelesaian Ompreng")
 
@@ -117,7 +118,7 @@ if st.button("🚀 Jalankan Simulasi"):
     st.plotly_chart(fig_line, use_container_width=True)
 
     # ===============================
-    # TOTAL WAKTU PER PROSES
+    # BAR CHART 1 - TOTAL WAKTU PER PROSES
     # ===============================
     st.subheader("📊 Total Waktu per Proses")
 
@@ -136,7 +137,32 @@ if st.button("🚀 Jalankan Simulasi"):
     st.plotly_chart(fig_proses, use_container_width=True)
 
     # ===============================
-    # DISTRIBUSI BATCH
+    # BAR CHART 2 - RATA-RATA WAKTU
+    # ===============================
+    st.subheader("📊 Rata-rata Waktu per Proses")
+
+    estimasi_batch = len(batch_counter_data) if len(batch_counter_data) > 0 else 1
+
+    df_avg = pd.DataFrame({
+        "Proses": ["Lauk", "Angkat", "Nasi"],
+        "Rata-rata Waktu (detik)": [
+            total_lauk / TOTAL_OMPRENG,
+            total_angkat / estimasi_batch,
+            total_nasi / TOTAL_OMPRENG
+        ]
+    })
+
+    fig_avg = px.bar(
+        df_avg,
+        x="Proses",
+        y="Rata-rata Waktu (detik)",
+        title="Rata-rata Waktu per Proses"
+    )
+
+    st.plotly_chart(fig_avg, use_container_width=True)
+
+    # ===============================
+    # BAR CHART 3 - DISTRIBUSI BATCH
     # ===============================
     st.subheader("📊 Distribusi Ukuran Batch Angkat")
 
@@ -158,11 +184,17 @@ if st.button("🚀 Jalankan Simulasi"):
         st.plotly_chart(fig_batch, use_container_width=True)
 
     # ===============================
-    # IDENTIFIKASI BOTTLENECK
+    # STATISTIK TAMBAHAN
     # ===============================
+    st.subheader("📊 Statistik Tambahan")
+
+    st.write(f"Rata-rata waktu per ompreng: {total_detik/TOTAL_OMPRENG:.2f} detik")
+    st.write(f"Total waktu dalam jam: {total_menit/60:.2f} jam")
+
+    # Identifikasi Bottleneck
     bottleneck = max(
-        [("Lauk", total_lauk),
-         ("Angkat", total_angkat),
+        [("Lauk", total_lauk), 
+         ("Angkat", total_angkat), 
          ("Nasi", total_nasi)],
         key=lambda x: x[1]
     )
