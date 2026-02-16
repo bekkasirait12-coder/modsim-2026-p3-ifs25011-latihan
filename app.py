@@ -61,7 +61,7 @@ if st.button("🚀 Jalankan Simulasi"):
         # ===============================
         waktu_lauk = random.uniform(min_lauk, max_lauk)
         total_lauk += waktu_lauk
-        waktu_lauk_selesai += waktu_lauk
+        waktu_lauk_selesai += waktu_lauk / total_mahasiswa_yang_piket
 
         # ===============================
         # PROSES ANGKAT (BATCH)
@@ -71,7 +71,7 @@ if st.button("🚀 Jalankan Simulasi"):
         if counter_batch >= batch_size:
             waktu_angkat = random.uniform(min_angkat, max_angkat)
             total_angkat += waktu_angkat
-            waktu_angkat_selesai = max(waktu_lauk_selesai, waktu_angkat_selesai) + waktu_angkat
+            waktu_angkat_selesai = max(waktu_lauk_selesai, waktu_angkat_selesai) + (waktu_angkat / total_mahasiswa_yang_piket)
 
             batch_counter_data.append(batch_size)
 
@@ -83,7 +83,7 @@ if st.button("🚀 Jalankan Simulasi"):
         # ===============================
         waktu_nasi = random.uniform(min_nasi, max_nasi)
         total_nasi += waktu_nasi
-        waktu_nasi_selesai = max(waktu_angkat_selesai, waktu_nasi_selesai) + waktu_nasi
+        waktu_nasi_selesai = max(waktu_angkat_selesai, waktu_nasi_selesai) + (waktu_nasi / total_mahasiswa_yang_piket)
 
         data.append({
             "Ompreng": i + 1,
