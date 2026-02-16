@@ -2,6 +2,14 @@ import streamlit as st
 import random
 import pandas as pd
 import plotly.express as px
+import datetime
+
+st.sidebar.header("⏰ Pengaturan Waktu")
+
+jam_mulai = st.sidebar.time_input(
+    "Pilih Jam Mulai Piket:",
+    value=datetime.time(7, 0)
+)
 
 st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
 st.markdown("""
