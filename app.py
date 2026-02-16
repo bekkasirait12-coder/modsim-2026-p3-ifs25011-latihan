@@ -4,6 +4,13 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
+st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            background-color: #ffc0cb;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("📊 Simulasi Sistem Piket IT Del")
 st.markdown("Simulasi proses pengisian ompreng untuk sistem piket.")
