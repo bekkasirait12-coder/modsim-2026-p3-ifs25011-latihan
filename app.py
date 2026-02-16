@@ -1,0 +1,201 @@
+import streamlit as st
+import random
+import pandas as pd
+import plotly.express as px
+
+st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
+
+st.title("📊 Simulasi Sistem Piket IT Del")
+st.markdown("Simulasi proses pengisian ompreng untuk sistem piket.")
+
+# ===============================
+# Sidebar Parameter
+# ===============================
+st.sidebar.header("⚙️ Parameter Simulasi")
+
+total_meja = st.sidebar.number_input("Jumlah Meja", value=60)
+mahasiswa_per_meja = st.sidebar.number_input("Mahasiswa per Meja", value=3)
+
+min_lauk = st.sidebar.number_input("Min Waktu Lauk (detik)", value=30)
+max_lauk = st.sidebar.number_input("Max Waktu Lauk (detik)", value=60)
+
+min_nasi = st.sidebar.number_input("Min Waktu Nasi (detik)", value=30)
+max_nasi = st.sidebar.number_input("Max Waktu Nasi (detik)", value=60)
+
+min_angkat = st.sidebar.number_input("Min Waktu Angkat (detik)", value=20)
+max_angkat = st.sidebar.number_input("Max Waktu Angkat (detik)", value=60)
+
+# ===============================
+# SIMULASI
+# ===============================
+if st.button("🚀 Jalankan Simulasi"):
+
+    TOTAL_OMPRENG = total_meja * mahasiswa_per_meja
+
+    waktu_lauk_selesai = 0
+    waktu_angkat_selesai = 0
+    waktu_nasi_selesai = 0
+
+    total_lauk = 0
+    total_nasi = 0
+    total_angkat = 0
+
+    data = []
+    batch_counter_data = []
+
+    batch_size = random.randint(4, 7)
+    counter_batch = 0
+
+    for i in range(TOTAL_OMPRENG):
+
+        # ===============================
+        # PROSES LAUK
+        # ===============================
+        waktu_lauk = random.uniform(min_lauk, max_lauk)
+        total_lauk += waktu_lauk
+        waktu_lauk_selesai += waktu_lauk
+
+        # ===============================
+        # PROSES ANGKAT (BATCH)
+        # ===============================
+        counter_batch += 1
+
+        if counter_batch >= batch_size:
+            waktu_angkat = random.uniform(min_angkat, max_angkat)
+            total_angkat += waktu_angkat
+            waktu_angkat_selesai = max(waktu_lauk_selesai, waktu_angkat_selesai) + waktu_angkat
+
+            batch_counter_data.append(batch_size)
+
+            counter_batch = 0
+            batch_size = random.randint(4, 7)
+
+        # ===============================
+        # PROSES NASI
+        # ===============================
+        waktu_nasi = random.uniform(min_nasi, max_nasi)
+        total_nasi += waktu_nasi
+        waktu_nasi_selesai = max(waktu_angkat_selesai, waktu_nasi_selesai) + waktu_nasi
+
+        data.append({
+            "Ompreng": i + 1,
+            "Waktu Selesai (detik)": waktu_nasi_selesai
+        })
+
+    # ===============================
+    # OUTPUT METRIC
+    # ===============================
+    total_detik = waktu_nasi_selesai
+    total_menit = total_detik / 60
+    jam_selesai = 7 + (total_menit / 60)
+
+    st.success("Simulasi Selesai!")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Total Ompreng", TOTAL_OMPRENG)
+    col2.metric("Total Waktu (menit)", f"{total_menit:.2f}")
+    col3.metric("Estimasi Selesai", f"{jam_selesai:.2f} WIB")
+
+    # ===============================
+    # DATAFRAME
+    # ===============================
+    df = pd.DataFrame(data)
+
+    # ===============================
+    # LINE CHART (PROGRES)
+    # ===============================
+    st.subheader("📈 Grafik Progres Penyelesaian Ompreng")
+
+    fig_line = px.line(
+        df,
+        x="Ompreng",
+        y="Waktu Selesai (detik)",
+        title="Progres Penyelesaian Ompreng"
+    )
+
+    st.plotly_chart(fig_line, use_container_width=True)
+
+    # ===============================
+    # BAR CHART 1 - TOTAL WAKTU PER PROSES
+    # ===============================
+    st.subheader("📊 Total Waktu per Proses")
+
+    df_proses = pd.DataFrame({
+        "Proses": ["Lauk", "Angkat", "Nasi"],
+        "Total Waktu (detik)": [total_lauk, total_angkat, total_nasi]
+    })
+
+    fig_proses = px.bar(
+        df_proses,
+        x="Proses",
+        y="Total Waktu (detik)",
+        title="Total Waktu per Tahap Proses"
+    )
+
+    st.plotly_chart(fig_proses, use_container_width=True)
+
+    # ===============================
+    # BAR CHART 2 - RATA-RATA WAKTU
+    # ===============================
+    st.subheader("📊 Rata-rata Waktu per Proses")
+
+    estimasi_batch = len(batch_counter_data) if len(batch_counter_data) > 0 else 1
+
+    df_avg = pd.DataFrame({
+        "Proses": ["Lauk", "Angkat", "Nasi"],
+        "Rata-rata Waktu (detik)": [
+            total_lauk / TOTAL_OMPRENG,
+            total_angkat / estimasi_batch,
+            total_nasi / TOTAL_OMPRENG
+        ]
+    })
+
+    fig_avg = px.bar(
+        df_avg,
+        x="Proses",
+        y="Rata-rata Waktu (detik)",
+        title="Rata-rata Waktu per Proses"
+    )
+
+    st.plotly_chart(fig_avg, use_container_width=True)
+
+    # ===============================
+    # BAR CHART 3 - DISTRIBUSI BATCH
+    # ===============================
+    st.subheader("📊 Distribusi Ukuran Batch Angkat")
+
+    if len(batch_counter_data) > 0:
+        df_batch = pd.DataFrame({
+            "Ukuran Batch": batch_counter_data
+        })
+
+        df_batch_count = df_batch.value_counts().reset_index()
+        df_batch_count.columns = ["Ukuran Batch", "Frekuensi"]
+
+        fig_batch = px.bar(
+            df_batch_count,
+            x="Ukuran Batch",
+            y="Frekuensi",
+            title="Distribusi Ukuran Batch"
+        )
+
+        st.plotly_chart(fig_batch, use_container_width=True)
+
+    # ===============================
+    # STATISTIK TAMBAHAN
+    # ===============================
+    st.subheader("📊 Statistik Tambahan")
+
+    st.write(f"Rata-rata waktu per ompreng: {total_detik/TOTAL_OMPRENG:.2f} detik")
+    st.write(f"Total waktu dalam jam: {total_menit/60:.2f} jam")
+
+    # Identifikasi Bottleneck
+    bottleneck = max(
+        [("Lauk", total_lauk), 
+         ("Angkat", total_angkat), 
+         ("Nasi", total_nasi)],
+        key=lambda x: x[1]
+    )
+
+    st.warning(f"⚠️ Bottleneck sistem berada pada proses: **{bottleneck[0]}**")
