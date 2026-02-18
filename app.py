@@ -2,6 +2,7 @@ import streamlit as st
 import random
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go 
 import datetime
 
 st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
@@ -176,6 +177,28 @@ if st.button("🚀 Jalankan Simulasi"):
     )
 
     st.plotly_chart(fig_proses, use_container_width=True)
+    
+    # ===============================
+    # GAUGE CHART UTILISASI
+    # ===============================
+    st.subheader("📈 Gauge Utilisasi Sistem")
+
+    fig_gauge = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=utilisasi,
+        title={'text': "Utilisasi Sistem (%)"},
+        gauge={
+            'axis': {'range': [0, 100]},
+            'bar': {'color': "darkblue"},
+            'steps': [
+                {'range': [0, 50], 'color': "lightgreen"},
+                {'range': [50, 80], 'color': "yellow"},
+                {'range': [80, 100], 'color': "red"},
+            ],
+        }
+    ))
+
+    st.plotly_chart(fig_gauge, use_container_width=True)
 
     # ===============================
     # RATA-RATA WAKTU
