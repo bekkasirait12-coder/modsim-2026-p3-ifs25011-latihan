@@ -4,6 +4,11 @@ import pandas as pd
 import plotly.express as px
 import datetime
 
+st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
+
+# ===============================
+# SIDEBAR WAKTU
+# ===============================
 st.sidebar.header("⏰ Pengaturan Waktu")
 
 jam_mulai = st.sidebar.time_input(
@@ -11,7 +16,7 @@ jam_mulai = st.sidebar.time_input(
     value=datetime.time(7, 0)
 )
 
-st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
+# Styling Sidebar
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -99,19 +104,40 @@ if st.button("🚀 Jalankan Simulasi"):
         })
 
     # ===============================
-    # OUTPUT METRIC
+    # PERHITUNGAN WAKTU SELESAI REAL
     # ===============================
     total_detik = waktu_nasi_selesai
     total_menit = total_detik / 60
-    jam_selesai = 7 + (total_menit / 60)
+
+    waktu_mulai_datetime = datetime.datetime.combine(
+        datetime.date.today(), jam_mulai
+    )
+
+    waktu_selesai_datetime = waktu_mulai_datetime + datetime.timedelta(
+        seconds=total_detik
+    )
+
+    jam_selesai_str = waktu_selesai_datetime.strftime("%H:%M:%S")
+
+    # ===============================
+    # PERHITUNGAN UTILISASI
+    # ===============================
+    total_waktu_proses = total_lauk + total_angkat + total_nasi
+    kapasitas_maks = total_mahasiswa_yang_piket * total_detik
+
+    utilisasi = (total_waktu_proses / kapasitas_maks) * 100 if kapasitas_maks > 0 else 0
 
     st.success("Simulasi Selesai!")
 
-    col1, col2, col3 = st.columns(3)
+    # ===============================
+    # METRIC
+    # ===============================
+    col1, col2, col3, col4 = st.columns(4)
 
     col1.metric("Total Ompreng", TOTAL_OMPRENG)
     col2.metric("Total Waktu (menit)", f"{total_menit:.2f}")
-    col3.metric("Estimasi Selesai", f"{jam_selesai:.2f} WIB")
+    col3.metric("Selesai Pukul", jam_selesai_str)
+    col4.metric("Utilisasi (%)", f"{utilisasi:.2f}%")
 
     # ===============================
     # DATAFRAME
@@ -119,7 +145,7 @@ if st.button("🚀 Jalankan Simulasi"):
     df = pd.DataFrame(data)
 
     # ===============================
-    # LINE CHART (PROGRES)
+    # LINE CHART
     # ===============================
     st.subheader("📈 Grafik Progres Penyelesaian Ompreng")
 
@@ -133,7 +159,7 @@ if st.button("🚀 Jalankan Simulasi"):
     st.plotly_chart(fig_line, use_container_width=True)
 
     # ===============================
-    # BAR CHART 1 - TOTAL WAKTU PER PROSES
+    # BAR CHART - TOTAL WAKTU
     # ===============================
     st.subheader("📊 Total Waktu per Proses")
 
@@ -152,7 +178,7 @@ if st.button("🚀 Jalankan Simulasi"):
     st.plotly_chart(fig_proses, use_container_width=True)
 
     # ===============================
-    # BAR CHART 2 - RATA-RATA WAKTU
+    # RATA-RATA WAKTU
     # ===============================
     st.subheader("📊 Rata-rata Waktu per Proses")
 
@@ -177,7 +203,7 @@ if st.button("🚀 Jalankan Simulasi"):
     st.plotly_chart(fig_avg, use_container_width=True)
 
     # ===============================
-    # BAR CHART 3 - DISTRIBUSI BATCH
+    # DISTRIBUSI BATCH
     # ===============================
     st.subheader("📊 Distribusi Ukuran Batch Angkat")
 
@@ -205,6 +231,8 @@ if st.button("🚀 Jalankan Simulasi"):
 
     st.write(f"Rata-rata waktu per ompreng: {total_detik/TOTAL_OMPRENG:.2f} detik")
     st.write(f"Total waktu dalam jam: {total_menit/60:.2f} jam")
+    st.write(f"Waktu selesai terakhir: {jam_selesai_str}")
+    st.write(f"Rata-rata utilisasi sistem: {utilisasi:.2f}%")
 
     # Identifikasi Bottleneck
     bottleneck = max(
