@@ -4,7 +4,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import datetime
-
 random.seed(42)
 
 st.set_page_config(page_title="Simulasi Piket IT Del", layout="wide")
@@ -20,7 +19,7 @@ jam_mulai = st.sidebar.time_input(
 )
 
 # ===============================
-# SIDEBAR PARAMETER
+# SIDEBAR PARAMETER (DIPINDAH KE ATAS AGAR TIDAK ERROR)
 # ===============================
 st.sidebar.header("⚙️ Parameter Simulasi")
 
@@ -55,7 +54,7 @@ st.title("📊 Simulasi Sistem Piket IT Del")
 st.markdown("Simulasi proses pengisian ompreng untuk sistem piket.")
 
 # ===============================
-# CARD INFORMASI
+# CARD INFORMASI SIMULASI
 # ===============================
 st.markdown(f"""
 <div style="
@@ -67,14 +66,24 @@ st.markdown(f"""
 
 <h1>🚀 Mulai Simulasi</h1>
 
+<h3>Langkah-langkah:</h3>
+
+<ol>
+<li>Atur parameter simulasi di sidebar kiri</li>
+<li>Klik tombol <b>'Jalankan Simulasi'</b></li>
+<li>Tunggu proses simulasi selesai</li>
+<li>Lihat hasil dan visualisasi</li>
+</ol>
+
 <h3>Parameter Saat Ini:</h3>
+
 <ul>
 <li><b>Jumlah Mahasiswa Piket:</b> {total_mahasiswa_yang_piket}</li>
 <li><b>Jumlah Meja:</b> {total_meja}</li>
 <li><b>Mahasiswa per Meja:</b> {mahasiswa_per_meja}</li>
 <li><b>Waktu Lauk:</b> {min_lauk} - {max_lauk} detik</li>
 <li><b>Waktu Nasi:</b> {min_nasi} - {max_nasi} detik</li>
-<li><b>Waktu Angkat:</b> {min_angkat} - {max_angkat} detik</li>
+<li><b>Waktu Angkat (Batch):</b> {min_angkat} - {max_angkat} detik</li>
 <li><b>Jam Mulai:</b> {jam_mulai.strftime("%H:%M")}</li>
 </ul>
 
@@ -132,9 +141,26 @@ if st.button("🚀 Jalankan Simulasi"):
         })
 
     # ===============================
-    # PERHITUNGAN WAKTU
+    # PERHITUNGAN WAKTU (FIX SINKRON)
     # ===============================
-    total_detik = round(waktu_nasi_selesai)
+    total_detik = waktu_nasi_selesai
+
+    # Bulatkan detik agar konsisten
+    total_detik = round(total_detik)
+
+    # ===============================
+    # RATA-RATA LAYANAN
+    # ===============================
+
+    # Rata-rata layanan berdasarkan total waktu sistem selesai
+    rata_rata_layanan_simulasi = total_detik / TOTAL_OMPRENG
+    rata_rata_layanan_simulasi_menit = rata_rata_layanan_simulasi / 60
+
+    # Rata-rata layanan berdasarkan total waktu proses murni
+    total_waktu_proses = total_lauk + total_angkat + total_nasi
+    rata_rata_layanan_teori = total_waktu_proses / TOTAL_OMPRENG
+    rata_rata_layanan_teori_menit = rata_rata_layanan_teori / 60
+
     total_menit = total_detik / 60
 
     waktu_mulai_datetime = datetime.datetime.combine(
@@ -148,29 +174,38 @@ if st.button("🚀 Jalankan Simulasi"):
     jam_selesai_str = waktu_selesai_datetime.strftime("%H:%M:%S")
 
     # ===============================
-    # UTILISASI & RATA-RATA LAYANAN
+    # UTILISASI 
     # ===============================
     total_waktu_proses = total_lauk + total_angkat + total_nasi
     kapasitas_maks = total_mahasiswa_yang_piket * total_detik
     utilisasi = (total_waktu_proses / kapasitas_maks) * 100 if kapasitas_maks > 0 else 0
-
-    # Rata-rata layanan gabungan per ompreng (MENIT)
-    rata_total_layanan_menit = (total_waktu_proses / TOTAL_OMPRENG) / 60
 
     st.success("Simulasi Selesai!")
 
     # ===============================
     # METRIC
     # ===============================
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
 
     col1.metric("Total Ompreng", TOTAL_OMPRENG)
     col2.metric("Total Waktu (menit)", f"{total_menit:.2f}")
     col3.metric("Selesai Pukul", jam_selesai_str)
     col4.metric("Utilisasi (%)", f"{utilisasi:.2f}%")
-    col5.metric("Layanan per Ompreng (menit)", f"{rata_total_layanan_menit:.2f}")
+    st.markdown("### ⏱ Rata-rata Layanan")
 
-        # ===============================
+    col5, col6 = st.columns(2)
+
+    col5.metric(
+        "Rata-rata Layanan Simulasi (detik)",
+        f"{rata_rata_layanan_simulasi:.2f}"
+    )
+
+    col6.metric(
+        "Rata-rata Layanan Teoritis (detik)",
+        f"{rata_rata_layanan_teori:.2f}"
+    )
+
+    # ===============================
     # DATAFRAME
     # ===============================
     df = pd.DataFrame(data)
